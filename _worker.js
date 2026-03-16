@@ -47,6 +47,7 @@
         const assetResp = await fetch(targetAsset.url, {
           headers: {
             Authorization: `Bearer ${githubPat}`,
+            Accept: targetAsset.content_type,
             "User-Agent": "cfworker",
           },
           redirect: "follow",
