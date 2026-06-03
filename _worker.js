@@ -1,4 +1,27 @@
-﻿const routeHandlers = {
+const routeHandlers = {
+  async github(request, url) {
+    const githubPath = url.pathname.replace('/github/', '');
+    const githubUrl = `https://api.github.com/${githubPath}`;
+    const headers = new Headers(request.headers);
+    headers.set('User-Agent', 'Cloudflare-Worker');
+
+    const githubResponse = await fetch(githubUrl, {
+      method: request.method,
+      headers,
+      body: request.method !== 'GET' ? await request.text() : undefined
+    });
+
+    return new Response(await githubResponse.text(), {
+      status: githubResponse.status,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        "Content-Type": githubResponse.headers.get('Content-Type')
+      }
+    });
+  },
+
   async gist(request, url, env) {
     const [token, key] = ["token", "key"].map((p) => url.searchParams.get(p));
     const { githubUser, githubId } = ((v) => (v ? JSON.parse(v) : {}))(
@@ -121,6 +144,7 @@ export default {
     const pathname = url.pathname;
 
     const routes = {
+      "/github/": () => routeHandlers.github(request, url),
       "/gist": () => routeHandlers.gist(request, url, env),
       "/release": () => routeHandlers.release(request, url, env),
       "/raw": () => routeHandlers.raw(request, url),
